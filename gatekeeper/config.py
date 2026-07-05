@@ -1,6 +1,7 @@
-"""Config-driven wiring. In later sections, which extractor / signals / policy
-to use is selected here from config, so experiments (§7) become a config change,
-not a code change. For §0 this just builds the default walking-skeleton pipeline.
+"""Config-driven wiring. Which extractor / signals / policy to use is selected
+here, so experiments (§7) become a config change, not a code change. §2 adds the
+'ollama' extractor option; a Fake- or Ollama-backed extractor can also be passed
+in directly via the `extractor=` override (used by tests and demos).
 """
 from __future__ import annotations
 
@@ -9,6 +10,7 @@ from typing import Optional
 
 from .schema import Schema
 from .pipeline import Pipeline
+from .interfaces import Extractor
 from .stubs import (
     StubExtractor,
     ConstantSignalGenerator,
@@ -19,19 +21,28 @@ from .stubs import (
 
 @dataclass
 class PipelineConfig:
-    extractor: str = "stub"
+    extractor: str = "stub"                 # "stub" | "ollama"
+    ollama_model: str = "qwen2.5:7b"
+    ollama_host: str = "http://localhost:11434"
     signal_generators: list[str] = dc_field(default_factory=lambda: ["constant"])
     calibrator: str = "constant"
     policy: str = "threshold"
     threshold: float = 0.5
 
 
-def build_pipeline(schema: Schema, config: Optional[PipelineConfig] = None) -> Pipeline:
+def _build_extractor(config: PipelineConfig) -> Extractor:
+    if config.extractor == "ollama":
+        from .extract import LLMExtractor, OllamaClient      # lazy: only if selected
+        return LLMExtractor(OllamaClient(model=config.ollama_model, host=config.ollama_host))
+    return StubExtractor()
+
+
+def build_pipeline(schema: Schema, config: Optional[PipelineConfig] = None,
+                   *, extractor: Optional[Extractor] = None) -> Pipeline:
     config = config or PipelineConfig()
-    # In §2+ this becomes a registry lookup keyed on the config strings above.
     return Pipeline(
         schema=schema,
-        extractor=StubExtractor(),
+        extractor=extractor or _build_extractor(config),
         signal_generators=[ConstantSignalGenerator()],
         calibrator=ConstantCalibrator(),
         policy=ThresholdPolicy(threshold=config.threshold),

@@ -1,5 +1,5 @@
 """gatekeeper -- a confidence-gating / selective-escalation layer for LLM
-extraction. §0: foundations & contracts. §1: dataset layer."""
+extraction. §0: foundations. §1: dataset layer. §2: real extractor."""
 from .types import Record, Field, Signal, Decision, Action
 from .schema import Schema, FieldSpec
 from .interfaces import Extractor, SignalGenerator, Calibrator, Policy
@@ -13,6 +13,9 @@ from .data import (
     FixtureInvoiceLoader, invoice_schema,
 )
 
+# §2 extractor
+from .extract import LLMClient, OllamaClient, FakeClient, LLMExtractor
+
 __all__ = [
     # §0
     "Record", "Field", "Signal", "Decision", "Action",
@@ -23,4 +26,6 @@ __all__ = [
     "GroundTruth", "LabeledExample", "is_correct",
     "DatasetLoader", "Splits", "split_examples",
     "FixtureInvoiceLoader", "invoice_schema",
+    # §2
+    "LLMClient", "OllamaClient", "FakeClient", "LLMExtractor",
 ]
