@@ -12,6 +12,33 @@ from __future__ import annotations
 from ..schema import Schema, FieldSpec
 from .example import GroundTruth, LabeledExample
 from .loader import DatasetLoader
+from .matching import to_number, to_date
+
+
+# --- business rules attached to the invoice schema (used by the §3 RuleSignal) ---
+# Each rule takes (value, fields) and returns True if the value passes. None
+# (an absent field) always passes -- absence is not a malformed value.
+
+def _no_leading_punctuation(value, fields=None) -> bool:
+    """An identifier shouldn't start with stray punctuation -- catches '#4471'."""
+    if value is None:
+        return True
+    s = str(value).strip()
+    return bool(s) and s[0].isalnum()
+
+
+def _positive_amount(value, fields=None) -> bool:
+    if value is None:
+        return True
+    v = to_number(value)
+    return v is not None and v > 0
+
+
+def _plausible_year(value, fields=None) -> bool:
+    if value is None:
+        return True
+    d = to_date(value)
+    return d is None or (2000 <= d.year <= 2035)
 
 
 def invoice_schema() -> Schema:
@@ -19,9 +46,12 @@ def invoice_schema() -> Schema:
     return Schema(
         doc_type="invoice",
         fields=[
-            FieldSpec("invoice_number", dtype="exact",  critical=True,  error_cost=3.0),
-            FieldSpec("invoice_date",   dtype="date",   critical=False, error_cost=1.0),
-            FieldSpec("total_amount",   dtype="number", critical=True,  error_cost=5.0),
+            FieldSpec("invoice_number", dtype="exact",  critical=True,  error_cost=3.0,
+                      rules=[_no_leading_punctuation]),
+            FieldSpec("invoice_date",   dtype="date",   critical=False, error_cost=1.0,
+                      rules=[_plausible_year]),
+            FieldSpec("total_amount",   dtype="number", critical=True,  error_cost=5.0,
+                      rules=[_positive_amount]),
             FieldSpec("vendor_name",    dtype="str",    critical=False, error_cost=1.0),
         ],
     )

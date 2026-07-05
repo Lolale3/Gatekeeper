@@ -91,3 +91,13 @@ def is_correct(predicted: Any, gold: Any, dtype: str = "str",
     if dtype == "exact":
         return False
     return SequenceMatcher(None, ps, gs).ratio() >= fuzzy_threshold
+
+
+# Public normalization helpers, reused by the §3 signal generators so all
+# normalization logic lives in one place.
+def to_number(v: Any) -> Optional[float]:
+    return _norm_number(v)
+
+
+def to_date(v: Any):
+    return _norm_date(v)
