@@ -12,7 +12,7 @@ from typing import Optional
 
 from .schema import Schema
 from .pipeline import Pipeline
-from .interfaces import Extractor, SignalGenerator, Calibrator
+from .interfaces import Extractor, SignalGenerator, Calibrator, Policy
 from .stubs import (
     StubExtractor,
     ConstantSignalGenerator,
@@ -32,6 +32,7 @@ class PipelineConfig:
     calibrator: str = "constant"
     policy: str = "threshold"
     threshold: float = 0.5
+    review_cost: float = 1.0
 
 
 def _build_extractor(config: PipelineConfig) -> Extractor:
@@ -70,15 +71,23 @@ def _build_calibrator(config: PipelineConfig) -> Calibrator:
     return ConstantCalibrator()
 
 
+def _build_policy(config: PipelineConfig) -> Policy:
+    if config.policy == "cost_aware":
+        from .policy import CostAwarePolicy
+        return CostAwarePolicy(review_cost=config.review_cost)
+    return ThresholdPolicy(threshold=config.threshold)
+
+
 def build_pipeline(schema: Schema, config: Optional[PipelineConfig] = None, *,
                    extractor: Optional[Extractor] = None,
                    signal_generators: Optional[list[SignalGenerator]] = None,
-                   calibrator: Optional[Calibrator] = None) -> Pipeline:
+                   calibrator: Optional[Calibrator] = None,
+                   policy: Optional[Policy] = None) -> Pipeline:
     config = config or PipelineConfig()
     return Pipeline(
         schema=schema,
         extractor=extractor or _build_extractor(config),
         signal_generators=signal_generators or _build_signal_generators(config),
         calibrator=calibrator or _build_calibrator(config),
-        policy=ThresholdPolicy(threshold=config.threshold),
+        policy=policy or _build_policy(config),
     )

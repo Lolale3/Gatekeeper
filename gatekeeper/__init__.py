@@ -1,5 +1,5 @@
 """gatekeeper -- a confidence-gating / selective-escalation layer for LLM
-extraction. §0 foundations · §1 dataset · §2 extractor · §3 signals · §4 calibration."""
+extraction. §0 foundations · §1 dataset · §2 extractor · §3 signals · §4 calibration · §5 policy."""
 from .types import Record, Field, Signal, Decision, Action
 from .schema import Schema, FieldSpec
 from .interfaces import Extractor, SignalGenerator, Calibrator, Policy
@@ -17,6 +17,7 @@ from .calibration import (
     LogisticCalibrator, build_training_data, naive_risk,
     reliability_table, expected_calibration_error,
 )
+from .policy import CostAwarePolicy, risk_controlled_threshold
 
 __all__ = [
     "Record", "Field", "Signal", "Decision", "Action",
@@ -30,4 +31,5 @@ __all__ = [
     "SelfConsistencySignal", "GroundingSignal", "RuleSignal",
     "LogisticCalibrator", "build_training_data", "naive_risk",
     "reliability_table", "expected_calibration_error",
+    "CostAwarePolicy", "risk_controlled_threshold",
 ]
