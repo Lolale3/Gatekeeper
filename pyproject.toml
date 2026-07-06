@@ -5,6 +5,9 @@ description = "A confidence-gating / selective-escalation layer for LLM extracti
 requires-python = ">=3.10"
 dependencies = []
 
+[project.scripts]
+gatekeeper-gate = "gatekeeper.app.cli:main"
+
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
 eval = ["matplotlib>=3"]
