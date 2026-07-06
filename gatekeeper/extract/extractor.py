@@ -18,7 +18,7 @@ from .client import LLMClient
 _DTYPE_HINT = {
     "str": "text",
     "exact": "the exact identifier or code, copied as written",
-    "number": "a numeric value only (no currency symbols, no thousands separators)",
+    "number": "a numeric value only, no currency symbols or thousands separators (expand shorthand like '42k' to 42000)",
     "date": "a date in YYYY-MM-DD format",
 }
 

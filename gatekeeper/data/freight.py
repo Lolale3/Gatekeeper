@@ -31,7 +31,21 @@ def _plausible_weight(value, fields=None) -> bool:
     if value is None:
         return True
     v = to_number(value)
-    return v is not None and 0 < v <= 48000            # ~legal max gross
+    return v is not None and 1000 <= v <= 48000       # catches '42k' misread as 42
+
+
+def _place_ok(value, fields=None) -> bool:
+    """Origin/destination are mandatory and should be a short place name -- not a
+    phrase. Catches 'Inland Empire area (specifically Ontario)' and a missing origin."""
+    if value is None:
+        return False                                  # mandatory field
+    s = str(value).strip()
+    if not s or "(" in s or ")" in s:
+        return False
+    low = s.lower()
+    if "area" in low or "specifically" in low:
+        return False
+    return len(s.split()) <= 3                         # place names are short
 
 
 def _known_equipment(value, fields=None) -> bool:
@@ -49,11 +63,11 @@ def _plausible_year(value, fields=None) -> bool:
 
 def freight_schema() -> Schema:
     return Schema(doc_type="freight_load", fields=[
-        FieldSpec("origin",      dtype="str",    critical=True,  error_cost=3.0),
-        FieldSpec("destination", dtype="str",    critical=True,  error_cost=3.0),
+        FieldSpec("origin",      dtype="str",    critical=True,  error_cost=3.0, rules=[_place_ok]),
+        FieldSpec("destination", dtype="str",    critical=True,  error_cost=3.0, rules=[_place_ok]),
         FieldSpec("weight",      dtype="number", critical=False, error_cost=2.0, rules=[_plausible_weight]),
         FieldSpec("rate",        dtype="number", critical=True,  error_cost=5.0, rules=[_positive_rate]),
-        FieldSpec("pickup_date", dtype="date",   critical=False, error_cost=1.0, rules=[_plausible_year]),
+        FieldSpec("pickup_date", dtype="date",   critical=False, error_cost=2.0, rules=[_plausible_year]),
         FieldSpec("equipment",   dtype="str",    critical=False, error_cost=1.0, rules=[_known_equipment]),
     ])
 
@@ -76,8 +90,8 @@ def _fmt_rate(rng, r):
 
 
 def _fmt_date(rng, d):
-    return rng.choice([f"{d.month}/{d.day}", d.strftime("%B %d"),
-                       d.strftime("%m/%d"), d.strftime("%b %d")])
+    return rng.choice([f"{d.month}/{d.day}/{d.year}", d.strftime("%B %d, %Y"),
+                       d.strftime("%m/%d/%Y"), d.strftime("%b %d, %Y")])
 
 
 def _templates(v):
@@ -100,7 +114,7 @@ def _templates(v):
 class SyntheticFreightLoader(DatasetLoader):
     name = "synthetic_freight"
 
-    def __init__(self, n: int = 12, seed: int = 7):
+    def __init__(self, n: int = 40, seed: int = 7):
         self.n = n
         self.seed = seed
 
