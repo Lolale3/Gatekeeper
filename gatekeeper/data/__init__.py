@@ -4,10 +4,12 @@ from .example import GroundTruth, LabeledExample
 from .matching import is_correct
 from .loader import DatasetLoader, Splits, split_examples
 from .fixtures import FixtureInvoiceLoader, invoice_schema
+from .freight import SyntheticFreightLoader, freight_schema
 
 __all__ = [
     "GroundTruth", "LabeledExample",
     "is_correct",
     "DatasetLoader", "Splits", "split_examples",
     "FixtureInvoiceLoader", "invoice_schema",
+    "SyntheticFreightLoader", "freight_schema",
 ]

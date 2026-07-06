@@ -10,6 +10,7 @@ from .data import (
     GroundTruth, LabeledExample, is_correct,
     DatasetLoader, Splits, split_examples,
     FixtureInvoiceLoader, invoice_schema,
+    SyntheticFreightLoader, freight_schema,
 )
 from .extract import LLMClient, OllamaClient, FakeClient, LLMExtractor
 from .signals import SelfConsistencySignal, GroundingSignal, RuleSignal
@@ -32,6 +33,7 @@ __all__ = [
     "GroundTruth", "LabeledExample", "is_correct",
     "DatasetLoader", "Splits", "split_examples",
     "FixtureInvoiceLoader", "invoice_schema",
+    "SyntheticFreightLoader", "freight_schema",
     "LLMClient", "OllamaClient", "FakeClient", "LLMExtractor",
     "SelfConsistencySignal", "GroundingSignal", "RuleSignal",
     "LogisticCalibrator", "build_training_data", "naive_risk",
