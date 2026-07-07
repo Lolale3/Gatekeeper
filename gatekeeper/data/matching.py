@@ -26,9 +26,20 @@ def _norm_number(v: Any) -> Optional[float]:
         return None
     if isinstance(v, (int, float)):
         return float(v)
-    s = re.sub(r"[^0-9.\-]", "", str(v))          # drop currency symbols, commas, spaces
-    if s in ("", "-", ".", "-.", "."):
+    s = re.sub(r"[^0-9.,\-]", "", str(v))          # keep digits, separators, sign
+    if not s or s in ("-", ".", ",", "-.", "-,"):
         return None
+    # decide which separator is the decimal point
+    if "." in s and "," in s:
+        if s.rfind(",") > s.rfind("."):            # EU: 1.234,56 -> comma is decimal
+            s = s.replace(".", "").replace(",", ".")
+        else:                                       # US: 1,234.56 -> comma is thousands
+            s = s.replace(",", "")
+    elif "," in s:
+        if s.count(",") == 1 and re.search(r",\d{2}$", s):   # 66,00 -> decimal
+            s = s.replace(",", ".")
+        else:                                                 # 1,240 -> thousands
+            s = s.replace(",", "")
     try:
         return float(s)
     except ValueError:
@@ -39,6 +50,7 @@ _DATE_FORMATS = [
     "%Y-%m-%d", "%Y/%m/%d",
     "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y", "%d.%m.%Y",
     "%d %b %Y", "%d %B %Y", "%b %d, %Y", "%B %d, %Y",
+    "%d-%m-%y", "%d/%m/%y", "%m/%d/%y", "%m-%d-%y",     # two-digit years (real receipts)
 ]
 
 
