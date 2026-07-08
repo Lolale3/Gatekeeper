@@ -1,4 +1,4 @@
-# gatekeeper
+# Gatekeeper
 
 **The escalation-decision layer for LLM extraction.** Not an agent, not another eval
 framework — the reliability layer that decides, per field, when to trust an LLM's
