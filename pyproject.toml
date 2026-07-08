@@ -1,9 +1,16 @@
 [project]
 name = "gatekeeper"
-version = "0.0.1"
+version = "0.1.0"
 description = "A confidence-gating / selective-escalation layer for LLM extraction."
+readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Hindavi Dinesh Churi" }]
+keywords = ["llm", "extraction", "calibration", "confidence", "selective-prediction", "human-in-the-loop"]
 dependencies = []
+
+[project.urls]
+Repository = "https://github.com/Lolale3/gatekeeper"
 
 [project.scripts]
 gatekeeper-gate = "gatekeeper.app.cli:main"
