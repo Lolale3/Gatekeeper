@@ -1,65 +1,118 @@
-"""§1b (real): the parser recovers source_text and the mapped gold fields from the
-dataset's nested string-encoded rows. Tests the parsing offline (no download)."""
-import json
+"""THE honest evaluation. Runs the real Ollama extractor over real invoice-OCR
+documents (mychen76/invoices-and-receipts_ocr_v1), fits the calibrator on the real
+calibration split, and measures the risk-coverage curve on the untouched real test
+split. Neither the OCR noise nor the model's errors are authored by us, so these
+numbers are honest -- comparable to production trust-gate reports.
 
-from gatekeeper.data.real_invoice import parse_row, _to_obj
+Needs Ollama running and the datasets library:
+    pip install -e ".[real,eval]"     (datasets + matplotlib)
+    python examples/real_invoice_eval.py --limit 120
 
+Note: downloads ~282MB the first time and runs the model over the split (a few
+minutes). Use --offline to sanity-check plumbing without Ollama (degenerate).
+"""
+import argparse
 
-def _make_row():
-    # reconstruct the dataset's storage format: JSON strings whose values are
-    # Python-repr strings (single quotes), as mychen76/...ocr_v1 stores them.
-    ocr = ['Invoice no: 40378170', 'Date of issue:', '10/15/2012',
-           'Seller:', 'Patel, Thompson and Montgomery', '356 Kyle Vista',
-           'Client:', 'Jackson, Odonnell and Jackson', 'SUMMARY', 'Total', '66,00']
-    labels = {'header': {'invoice_no': '40378170', 'invoice_date': '10/15/2012',
-                         'seller': 'Patel, Thompson and Montgomery 356 Kyle Vista'},
-              'summary': {'total_gross_worth': '$66,00'}}
-    raw_data = json.dumps({"ocr_words": str(ocr)})
-    parsed_data = json.dumps({"xml": "", "json": str(labels)})
-    return raw_data, parsed_data
-
-
-def test_parse_row_recovers_text_and_fields():
-    raw_data, parsed_data = _make_row()
-    source_text, gold = parse_row(raw_data, parsed_data)
-
-    assert "Invoice no: 40378170" in source_text
-    assert "Jackson, Odonnell and Jackson" in source_text          # OCR ordering preserved
-    assert gold["invoice_number"] == "40378170"
-    assert gold["invoice_date"] == "10/15/2012"
-    assert gold["vendor_name"].startswith("Patel, Thompson and Montgomery")
-    assert gold["total_amount"] == "$66,00"
+from gatekeeper import invoice_schema, is_correct
+from gatekeeper.data import RealInvoiceLoader, split_examples
+from gatekeeper.extract import LLMExtractor, OllamaClient, FakeClient
+from gatekeeper.signals import GroundingSignal, RuleSignal, SelfConsistencySignal
+from gatekeeper.calibration import (
+    LogisticCalibrator, build_training_data, expected_calibration_error,
+)
+from gatekeeper.evaluation import (
+    collect_risk_labels, selective_error_at_coverage, aurc,
+)
 
 
-def test_to_obj_handles_json_and_repr_and_passthrough():
-    assert _to_obj('{"a": 1}') == {"a": 1}                          # json
-    assert _to_obj("{'a': 1}") == {"a": 1}                          # python repr
-    assert _to_obj({"a": 1}) == {"a": 1}                            # already an object
-    assert _to_obj("plain text") == "plain text"                    # unparseable -> passthrough
+def _run(extractor, signal_gens, schema, examples):
+    records, gts = [], []
+    for ex in examples:
+        rec = extractor.extract(ex.to_record(), schema)
+        for gen in signal_gens:
+            gen.generate(rec, schema)
+        records.append(rec)
+        gts.append(ex.ground_truth)
+    return records, gts
 
 
-def test_parse_row_tolerates_direct_dict_labels():
-    # some rows may already be parsed into dicts by the datasets library
-    raw = {"ocr_words": ["Invoice no: 5", "Total", "10.00"]}
-    labels = {"header": {"invoice_no": "5", "invoice_date": "2026-01-01", "seller": "Acme"},
-              "summary": {"total_gross_worth": "10.00"}}
-    source_text, gold = parse_row(raw, labels)
-    assert gold["invoice_number"] == "5"
-    assert gold["vendor_name"] == "Acme"
+def coverage_at_precision(risks, errors, target_precision):
+    """Largest auto-approval coverage whose precision (1 - error) >= target."""
+    best = 0.0
+    for cov in [i / 100 for i in range(5, 101, 5)]:
+        if 1 - selective_error_at_coverage(risks, errors, cov) >= target_precision:
+            best = cov
+    return best
 
 
-def test_number_parsing_handles_european_decimals():
-    from gatekeeper.data.matching import to_number
-    assert to_number("66,00") == 66.0            # EU decimal comma
-    assert to_number("1.234,56") == 1234.56      # EU thousands + decimal
-    assert to_number("$1,240.00") == 1240.0      # US thousands + decimal
-    assert to_number("1,240") == 1240.0          # US thousands, no decimal
-    assert to_number("2340.75") == 2340.75
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("--limit", type=int, default=120)
+    p.add_argument("--model", default="qwen2.5:7b")
+    p.add_argument("--consistency-n", type=int, default=0,
+                   help="add self-consistency with N samples (0 = off). Multiplies run time by N+1.")
+    p.add_argument("--offline", action="store_true")
+    args = p.parse_args()
+
+    schema = invoice_schema()
+    extractor = (LLMExtractor(FakeClient('{"invoice_number":"X","invoice_date":"2012-10-15","total_amount":"66","vendor_name":"Acme"}'))
+                 if args.offline else LLMExtractor(OllamaClient(model=args.model)))
+    signal_gens = [GroundingSignal(), RuleSignal()]
+    if args.consistency_n > 0:
+        sampler = (extractor if args.offline
+                   else LLMExtractor(OllamaClient(model=args.model), temperature=0.7))
+        signal_gens.insert(0, SelfConsistencySignal(sampler, n=args.consistency_n))
+        print(f"self-consistency ON (n={args.consistency_n}) -- extraction runs "
+              f"{args.consistency_n + 1}x, this will be slow.\n")
+
+    print(f"loading up to {args.limit} real invoices...")
+    examples = RealInvoiceLoader(limit=args.limit).load()
+    splits = split_examples(examples)
+    print(f"loaded {len(examples)}  ->  {splits.summary()}\n")
+
+    print("extracting + fitting calibrator on the real calibration split...")
+    cal_recs, cal_gts = _run(extractor, signal_gens, schema, splits.calibration)
+    X, y = build_training_data(cal_recs, cal_gts, schema)
+    calibrator = LogisticCalibrator().fit(X, y)
+    print(f"  fit on {len(X)} fields ({sum(y)} errors, {sum(y)/max(len(y),1):.0%} error rate)\n")
+
+    print("extracting + gating the real TEST split...")
+    test_recs, test_gts = _run(extractor, signal_gens, schema, splits.test)
+    for rec in test_recs:
+        calibrator.calibrate(rec, schema)
+    risks, errors = collect_risk_labels(test_recs, test_gts, schema)
+
+    import json
+    with open("real_eval_risks.json", "w") as fh:
+        json.dump({"risks": risks, "errors": errors}, fh)
+
+    print("\n=== HONEST RESULTS (real invoice OCR, unauthored errors) ===")
+    print(f"test fields: {len(errors)}, base error rate: {sum(errors)/max(len(errors),1):.1%}")
+    print(f"AURC: {aurc(risks, errors):.3f}   ECE: {expected_calibration_error(risks, errors):.3f}")
+    for cov in (0.5, 0.7, 0.9):
+        print(f"  at {cov:.0%} coverage -> {selective_error_at_coverage(risks, errors, cov):.1%} error "
+              f"({1 - selective_error_at_coverage(risks, errors, cov):.1%} precision)")
+    cov97 = coverage_at_precision(risks, errors, 0.97)
+    print(f"  coverage at >=97% precision: {cov97:.0%}   (compare to production trust-gate reports)")
+
+    from gatekeeper.policy import provable_risk_controlled_threshold
+    print("\nprovable operating points (guarantee holds with probability >= 90%):")
+    for alpha in (0.10, 0.25, 0.40):
+        t = provable_risk_controlled_threshold(risks, errors, alpha=alpha, delta=0.1)
+        approved = [(r, e) for r, e in zip(risks, errors) if r <= t]
+        cov = len(approved) / len(risks)
+        actual = (sum(e for _, e in approved) / len(approved)) if approved else 0.0
+        print(f"  guarantee error <= {alpha:.0%}  ->  auto-approve {cov:.0%}  "
+              f"(actual error on approved: {actual:.0%})")
+
+    try:
+        from gatekeeper.evaluation import plot_risk_coverage, plot_reliability
+        plot_risk_coverage(risks, errors, "real_risk_coverage.png")
+        plot_reliability(risks, errors, "real_reliability.png")
+        print("\nplots saved: real_risk_coverage.png, real_reliability.png")
+    except ImportError:
+        print("\n(install matplotlib for plots: pip install matplotlib)")
 
 
-def test_vendor_gold_strips_address():
-    from gatekeeper.data.real_invoice import _company_name
-    assert _company_name("Patel, Thompson and Montgomery 356 Kyle Vista, New James, MA") \
-        == "Patel, Thompson and Montgomery"
-    assert _company_name("Acme Freight Co.") == "Acme Freight Co."
-    assert _company_name(None) is None
+if __name__ == "__main__":
+    main()

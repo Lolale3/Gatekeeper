@@ -19,7 +19,10 @@ from .calibration import (
     LogisticCalibrator, build_training_data, naive_risk,
     reliability_table, expected_calibration_error,
 )
-from .policy import CostAwarePolicy, risk_controlled_threshold
+from .policy import (
+    CostAwarePolicy, risk_controlled_threshold,
+    provable_risk_controlled_threshold, binomial_upper_bound,
+)
 from .evaluation import (
     collect_risk_labels, risk_coverage_curve, selective_error_at_coverage,
     aurc, ablate_signals,
@@ -41,6 +44,7 @@ __all__ = [
     "LogisticCalibrator", "build_training_data", "naive_risk",
     "reliability_table", "expected_calibration_error",
     "CostAwarePolicy", "risk_controlled_threshold",
+    "provable_risk_controlled_threshold", "binomial_upper_bound",
     "collect_risk_labels", "risk_coverage_curve", "selective_error_at_coverage",
     "aurc", "ablate_signals",
     "FeedbackLoop", "corrections_to_training_data", "select_escalated_records",

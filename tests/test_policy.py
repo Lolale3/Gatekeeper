@@ -78,3 +78,33 @@ def test_risk_controlled_threshold_honors_budget():
     approved2 = [e for r, e in zip(risks, errs) if r <= t2]
     assert sum(approved2) / len(approved2) <= 0.25   # 25% budget honored
     assert t2 >= t                                   # a looser budget approves at least as much
+
+
+def test_binomial_upper_bound_properties():
+    from gatekeeper.policy import binomial_upper_bound
+    assert binomial_upper_bound(10, 10, 0.1) == 1.0           # all errors -> no upper info
+    assert binomial_upper_bound(5, 10, 0.1) >= 0.5            # >= point estimate
+    assert binomial_upper_bound(0, 100, 0.1) < 0.1           # many clean samples -> tight
+    assert binomial_upper_bound(0, 3, 0.1) > 0.3             # few samples -> loose
+    # more data tightens the bound
+    assert binomial_upper_bound(0, 100, 0.1) < binomial_upper_bound(0, 10, 0.1)
+
+
+def test_provable_threshold_honors_guarantee_and_is_conservative():
+    from gatekeeper.policy import (provable_risk_controlled_threshold,
+                                   risk_controlled_threshold)
+    from gatekeeper import Record, Schema, FieldSpec, GroundTruth
+
+    # large, clean low-risk region -> provable can certify it
+    risks = [0.05] * 40 + [0.8] * 20
+    errors = [0] * 40 + [1] * 20
+    t = provable_risk_controlled_threshold(risks, errors, alpha=0.2, delta=0.1)
+    approved = [(r, e) for r, e in zip(risks, errors) if r <= t]
+    assert approved and sum(e for _, e in approved) / len(approved) <= 0.2   # guarantee holds
+    assert t == 0.05                                                          # certified clean region
+
+    # tiny sample: provable refuses to certify what the empirical method accepts
+    small_risks = [0.05] * 3 + [0.8] * 3
+    small_errors = [0] * 3 + [1] * 3
+    prov = provable_risk_controlled_threshold(small_risks, small_errors, alpha=0.2, delta=0.1)
+    assert prov == 0.0                                                        # can't certify from 3 samples

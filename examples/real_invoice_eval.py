@@ -82,6 +82,10 @@ def main():
         calibrator.calibrate(rec, schema)
     risks, errors = collect_risk_labels(test_recs, test_gts, schema)
 
+    import json
+    with open("real_eval_risks.json", "w") as fh:
+        json.dump({"risks": risks, "errors": errors}, fh)
+
     print("\n=== HONEST RESULTS (real invoice OCR, unauthored errors) ===")
     print(f"test fields: {len(errors)}, base error rate: {sum(errors)/max(len(errors),1):.1%}")
     print(f"AURC: {aurc(risks, errors):.3f}   ECE: {expected_calibration_error(risks, errors):.3f}")
@@ -90,6 +94,16 @@ def main():
               f"({1 - selective_error_at_coverage(risks, errors, cov):.1%} precision)")
     cov97 = coverage_at_precision(risks, errors, 0.97)
     print(f"  coverage at >=97% precision: {cov97:.0%}   (compare to production trust-gate reports)")
+
+    from gatekeeper.policy import provable_risk_controlled_threshold
+    print("\nprovable operating points (guarantee holds with probability >= 90%):")
+    for alpha in (0.10, 0.25, 0.40):
+        t = provable_risk_controlled_threshold(risks, errors, alpha=alpha, delta=0.1)
+        approved = [(r, e) for r, e in zip(risks, errors) if r <= t]
+        cov = len(approved) / len(risks)
+        actual = (sum(e for _, e in approved) / len(approved)) if approved else 0.0
+        print(f"  guarantee error <= {alpha:.0%}  ->  auto-approve {cov:.0%}  "
+              f"(actual error on approved: {actual:.0%})")
 
     try:
         from gatekeeper.evaluation import plot_risk_coverage, plot_reliability
