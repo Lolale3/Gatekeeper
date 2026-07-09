@@ -4,3 +4,6 @@ __pycache__/
 .pytest_cache/
 *.egg-info/
 .DS_Store
+.png/.html
+demo_records.json
+real_eval_risks.json
