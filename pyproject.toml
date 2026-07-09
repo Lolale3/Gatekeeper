@@ -19,6 +19,7 @@ gatekeeper-gate = "gatekeeper.app.cli:main"
 dev = ["pytest>=8.0"]
 eval = ["matplotlib>=3"]
 real = ["datasets>=2"]
+ui = ["streamlit>=1.30", "pandas>=2"]
 
 [build-system]
 requires = ["setuptools>=68"]

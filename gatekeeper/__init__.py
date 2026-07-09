@@ -14,7 +14,7 @@ from .data import (
     RealInvoiceLoader,
 )
 from .extract import LLMClient, OllamaClient, FakeClient, LLMExtractor
-from .signals import SelfConsistencySignal, GroundingSignal, RuleSignal
+from .signals import SelfConsistencySignal, TwoTemperatureSignal, GroundingSignal, RuleSignal
 from .calibration import (
     LogisticCalibrator, build_training_data, naive_risk,
     reliability_table, expected_calibration_error,
@@ -40,7 +40,7 @@ __all__ = [
     "SyntheticFreightLoader", "freight_schema",
     "RealInvoiceLoader",
     "LLMClient", "OllamaClient", "FakeClient", "LLMExtractor",
-    "SelfConsistencySignal", "GroundingSignal", "RuleSignal",
+    "SelfConsistencySignal", "TwoTemperatureSignal", "GroundingSignal", "RuleSignal",
     "LogisticCalibrator", "build_training_data", "naive_risk",
     "reliability_table", "expected_calibration_error",
     "CostAwarePolicy", "risk_controlled_threshold",

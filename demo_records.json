@@ -1,0 +1,263 @@
+[
+  {
+    "id": "115",
+    "fields": {
+      "invoice_number": {
+        "value": "46405643",
+        "risk": 0.2926,
+        "gold": "46405643",
+        "correct": true
+      },
+      "invoice_date": {
+        "value": "2018-05-16",
+        "risk": 0.2926,
+        "gold": "05/16/2018",
+        "correct": true
+      },
+      "total_amount": {
+        "value": 3098.57,
+        "risk": 0.2926,
+        "gold": "$3098,57",
+        "correct": true
+      },
+      "vendor_name": {
+        "value": null,
+        "risk": 0.5216,
+        "gold": "Wilson Inc",
+        "correct": false
+      }
+    }
+  },
+  {
+    "id": "117",
+    "fields": {
+      "invoice_number": {
+        "value": "59482422",
+        "risk": 0.5216,
+        "gold": "59482422",
+        "correct": true
+      },
+      "invoice_date": {
+        "value": "2016-02-22",
+        "risk": 0.2926,
+        "gold": "02/22/2016",
+        "correct": true
+      },
+      "total_amount": {
+        "value": 93431,
+        "risk": 0.7977,
+        "gold": "$ 934,31",
+        "correct": false
+      },
+      "vendor_name": {
+        "value": "Client:\nAvila-Espinoza\nDavis, Miller and Mcfarland",
+        "risk": 0.5216,
+        "gold": "Avila-Espinoza",
+        "correct": false
+      }
+    }
+  },
+  {
+    "id": "116",
+    "fields": {
+      "invoice_number": {
+        "value": "88273503",
+        "risk": 0.2926,
+        "gold": "88273503",
+        "correct": true
+      },
+      "invoice_date": {
+        "value": "2021-01-17",
+        "risk": 0.2926,
+        "gold": "01/17/2021",
+        "correct": true
+      },
+      "total_amount": {
+        "value": 549.98,
+        "risk": 0.2926,
+        "gold": "$ 549,98",
+        "correct": true
+      },
+      "vendor_name": {
+        "value": null,
+        "risk": 0.2926,
+        "gold": "Clark and Sons",
+        "correct": false
+      }
+    }
+  },
+  {
+    "id": "101",
+    "fields": {
+      "invoice_number": {
+        "value": "10823698",
+        "risk": 0.7419,
+        "gold": "10823698",
+        "correct": true
+      },
+      "invoice_date": {
+        "value": "2020-09-26",
+        "risk": 0.2926,
+        "gold": "09/26/2020",
+        "correct": true
+      },
+      "total_amount": {
+        "value": 52257.34,
+        "risk": 0.7977,
+        "gold": "$57483,07",
+        "correct": false
+      },
+      "vendor_name": {
+        "value": "Hernandez Ltd",
+        "risk": 0.2926,
+        "gold": "Hernandez Ltd",
+        "correct": true
+      }
+    }
+  },
+  {
+    "id": "104",
+    "fields": {
+      "invoice_number": {
+        "value": "99763738",
+        "risk": 0.2926,
+        "gold": "99763738",
+        "correct": true
+      },
+      "invoice_date": {
+        "value": "2017-06-14",
+        "risk": 0.2926,
+        "gold": "06/14/2017",
+        "correct": true
+      },
+      "total_amount": {
+        "value": 366.59,
+        "risk": 0.2926,
+        "gold": "$403,25",
+        "correct": false
+      },
+      "vendor_name": {
+        "value": null,
+        "risk": 0.7419,
+        "gold": "Wheeler-Dawson",
+        "correct": false
+      }
+    }
+  },
+  {
+    "id": "102",
+    "fields": {
+      "invoice_number": {
+        "value": "63665479",
+        "risk": 0.2926,
+        "gold": "63665479",
+        "correct": true
+      },
+      "invoice_date": {
+        "value": "2017-12-02",
+        "risk": 0.2926,
+        "gold": "02/12/2017",
+        "correct": true
+      },
+      "total_amount": {
+        "value": 176,
+        "risk": 0.2926,
+        "gold": "$ 176,00",
+        "correct": true
+      },
+      "vendor_name": {
+        "value": null,
+        "risk": 0.2926,
+        "gold": "Lowery LLC",
+        "correct": false
+      }
+    }
+  },
+  {
+    "id": "118",
+    "fields": {
+      "invoice_number": {
+        "value": "39390025",
+        "risk": 0.2926,
+        "gold": "39390025",
+        "correct": true
+      },
+      "invoice_date": {
+        "value": "2019-01-17",
+        "risk": 0.2926,
+        "gold": "01/17/2019",
+        "correct": true
+      },
+      "total_amount": {
+        "value": 1332.32,
+        "risk": 0.5993,
+        "gold": "$1332,32",
+        "correct": true
+      },
+      "vendor_name": {
+        "value": null,
+        "risk": 0.2926,
+        "gold": "Miller PLC",
+        "correct": false
+      }
+    }
+  },
+  {
+    "id": "106",
+    "fields": {
+      "invoice_number": {
+        "value": "28590433",
+        "risk": 0.2926,
+        "gold": "28590433",
+        "correct": true
+      },
+      "invoice_date": {
+        "value": "2016-09-27",
+        "risk": 0.2926,
+        "gold": "09/27/2016",
+        "correct": true
+      },
+      "total_amount": {
+        "value": 14367.76,
+        "risk": 0.5216,
+        "gold": "$ 15804,54",
+        "correct": false
+      },
+      "vendor_name": {
+        "value": null,
+        "risk": 0.5216,
+        "gold": "White Group",
+        "correct": false
+      }
+    }
+  },
+  {
+    "id": "105",
+    "fields": {
+      "invoice_number": {
+        "value": "65507091",
+        "risk": 0.2926,
+        "gold": "65507091",
+        "correct": true
+      },
+      "invoice_date": {
+        "value": "2014-07-30",
+        "risk": 0.2926,
+        "gold": "07/30/2014",
+        "correct": true
+      },
+      "total_amount": {
+        "value": 61429.21,
+        "risk": 0.5993,
+        "gold": "$67572,13",
+        "correct": false
+      },
+      "vendor_name": {
+        "value": null,
+        "risk": 0.2926,
+        "gold": "Pacheco, Simmons and Coleman",
+        "correct": false
+      }
+    }
+  }
+]

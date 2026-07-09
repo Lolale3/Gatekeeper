@@ -94,3 +94,27 @@ def test_self_consistency_partial_agreement_ignores_formatting():
                '{"total_amount":"1250"}', '{"total_amount":"1240"}']
     SelfConsistencySignal(LLMExtractor(FakeClient(samples)), n=4).generate(primary, schema)
     assert primary.fields["total_amount"].get_signal("self_consistency").value == 0.75
+
+
+def test_two_temperature_flags_unstable_fields():
+    """A field whose value changes between low and high temperature is flagged
+    unstable (0.0); a field that stays the same is stable (1.0)."""
+    from gatekeeper import invoice_schema, Record
+    from gatekeeper.extract import LLMExtractor, FakeClient
+    from gatekeeper.signals import TwoTemperatureSignal
+
+    schema = invoice_schema()
+    low = LLMExtractor(FakeClient(
+        '{"invoice_number":"111","invoice_date":"2026-01-01","total_amount":"100","vendor_name":"Acme"}'))
+    high = LLMExtractor(FakeClient(
+        '{"invoice_number":"999","invoice_date":"2026-01-01","total_amount":"100","vendor_name":"Acme"}'))
+
+    rec = low.extract(Record(id="t", source_text="x"), schema)   # populate fields
+    TwoTemperatureSignal(low, high, n=1).generate(rec, schema)
+
+    def sig(field):
+        return next(s.value for s in rec.fields[field].signals if s.name == "two_temperature")
+
+    assert sig("invoice_number") == 0.0      # 111 (low) vs 999 (high) -> unstable
+    assert sig("invoice_date") == 1.0        # unchanged -> stable
+    assert sig("vendor_name") == 1.0
